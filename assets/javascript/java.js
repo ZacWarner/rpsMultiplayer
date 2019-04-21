@@ -15,18 +15,14 @@ $(document).ready(function () {
     var database = firebase.database();
 
     //initialize variables
-
+    var yourPlayer = 0;
 
 
     //function to check players
     var connectionsRef = database.ref("/connections");
-
-    // '.info/connected' is a special location provided by Firebase that is updated every time
-    // the client's connection state changes.
-    // '.info/connected' is a boolean value, true if the client is connected and false if they are not.
+    console.log(connectionsRef);
     var connectedRef = database.ref(".info/connected");
-
-    // When the client's connection state changes...
+    console.log(connectedRef);
     connectedRef.on("value", function (snap) {
 
         // If they are connected..
@@ -40,15 +36,70 @@ $(document).ready(function () {
         }
     });
 
-    // When first loaded or when the connections list changes...
+
     connectionsRef.on("value", function (snapshot) {
 
-        // Display the viewer count in the html.
-        // The number of online users is the number of children in the connections list.
         $("#watchers").text(snapshot.numChildren());
     });
 
+    //assigns you a player on button click.
+    $(document).on("click", "#playGame", function () {
+        database.ref("/players").once("value").then(function (playerSnapshot) {
+            var isPlayer1 = playerSnapshot.val().player1;
+            console.log(isPlayer1);
+            var isPlayer2 = playerSnapshot.val().player2;
+            console.log(isPlayer2);
+
+            if (isPlayer1 === true) {
+                if (isPlayer2 === true) {
+                    alert("game is full");
+                    yourPlayer = 3;
+                }
+                else {
+                    database.ref("/players/player2").set(true);
+                    alert("you are player 2");
+
+                    yourPlayer = 2;
+                    playerChoices(yourPlayer);
+                }
+            }
+
+            else {
+                database.ref("/players/player1").set(true);
+                alert("you are player1");
+                yourPlayer = 1;
+            }
+        });
+
+    });
+
     //function to show choices
+    function playerChoices(yourPlayer) {
+        var div = $("<div>");
+        var h5 = $("<h5>").addClass("pb-2 border-bottom").html("Choose wisely");
+        var rock = $("<p>").addClass("choice").attr("id", "rock").html("Rock!");
+        var paper = $("<p>").addClass("choice").attr("id", "paper").html("Paper!");
+        var scissors = $("<p>").addClass("choice").attr("id", "scissors").html("Scissors!");
+        div.append(h5, rock, paper, scissors);
+        if (yourPlayer === 1) {
+            $("#player1Board").append(div);
+        }
+
+        else if (yourPlayer === 2) {
+            $("#player2Board").append(div);
+        }
+    };
+
+    //check for 2 players
+    database.ref("players").on("value", function (snapshot) {
+        var player1Rdy = snapshot.val().player1;
+        var player2Rdy = snapshot.val().player2;
+
+        if (player1Rdy === true && player2Rdy === true) {
+            playerChoices(yourPlayer);
+            alert("game Start");
+        }
+    });
 
     //function to calculate winner
 
