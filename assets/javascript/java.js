@@ -16,6 +16,9 @@ $(document).ready(function () {
 
     //initialize variables
     var yourPlayer = 0;
+    var play1Score = 0;
+    var play2Score = 0;
+    var yourName = prompt("whats your name?")
 
 
     //function to check players
@@ -31,16 +34,13 @@ $(document).ready(function () {
             // Add user to the connections list.
             var con = connectionsRef.push(true);
 
+
             // Remove user from the connection list when they disconnect.
             con.onDisconnect().remove();
+
         }
     });
 
-
-    connectionsRef.on("value", function (snapshot) {
-
-        $("#watchers").text(snapshot.numChildren());
-    });
 
     //assigns you a player on button click.
     $(document).on("click", "#playGame", function () {
@@ -57,17 +57,26 @@ $(document).ready(function () {
                 }
                 else {
                     database.ref("/players/player2").set(true);
-                    alert("you are player 2");
+                    yourPlayer2();
 
                     yourPlayer = 2;
-                    playerChoices(yourPlayer);
+                    $("#controlBoard").empty();
+                    var h5 = $("<h5>").addClass("card-title").attr("id", "directionsTitle").html("Good Luck!");
+                    var p = $("<p>").addClass("card-text").attr("id", "directionsInfo").html("The game will keep going until someone leaves!");
+                    var btn = $("<button>").addClass("btn btn-warning").attr("id", "leaveGame").html("Leave Game?");
+                    $("#controlBoard").append(h5, p, btn);
                 }
             }
 
             else {
                 database.ref("/players/player1").set(true);
-                alert("you are player1");
+                yourPlayer1();
                 yourPlayer = 1;
+                $("#controlBoard").empty();
+                var h5 = $("<h5>").addClass("card-title").attr("id", "directionsTitle").html("Welcome to my Rock Paper Scissors Game!");
+                var p = $("<p>").addClass("card-text").attr("id", "directionsInfo").html("We still need: 1 more players to join!");
+                var btn = $("<button>").addClass("btn btn-warning").attr("id", "leaveGame").html("Leave Game?");
+                $("#controlBoard").append(h5, p, btn);
             }
         });
 
@@ -115,6 +124,27 @@ $(document).ready(function () {
         }
     };
 
+    //update to show your player!
+    function yourPlayer1() {
+        $("#player1Board, #player2Board").empty();
+        var div = $("<div>").addClass("m-4 text-center");
+        var p = $("<p>").html("Your player one!");
+        var p2 = $("<p>").html("waiting on one more person to join!");
+        div.append(p, p2);
+
+        $("#player1Board").append(div);
+    };
+
+    function yourPlayer2() {
+        $("#player1Board, #player2Board").empty();
+        var div = $("<div>").addClass("m-4 text-center");
+        var p = $("<p>").html("Your player Two!");
+        var p2 = $("<p>").html("waiting on one more person to join!");
+        div.append(p, p2);
+        $("#player2Board").append(div);
+    };
+
+
     //function to show choices
     function playerChoices(yourPlayer) {
         $("#player1Board, #player2Board").empty();
@@ -150,10 +180,52 @@ $(document).ready(function () {
         var player2Rdy = snapshot.val().player2;
 
         if (player1Rdy === true && player2Rdy === true) {
-            playerChoices(yourPlayer);
-            alert("game Start");
+
+            gameStart();
+            console.log(yourPlayer);
+            leaveGameBtn(yourPlayer);
         }
+
+        else if (player1Rdy === false && player2Rdy === false) {
+            var playerNumNeeded = 2;
+            playGameBtn(playerNumNeeded);
+        }
+
+        else {
+            var playerNumNeeded = 1;
+            playGameBtn(playerNumNeeded);
+        }
+
     });
+
+    //gamestart countdown
+    function gameStart() {
+        $("#playBoard").empty();
+        var time = 6;
+        play1Score = 0;
+        play2Score = 0;
+        console.log("start")
+        console.log(time)
+        var intervalId = setInterval(function () {
+            $("#playBoard").empty();
+            time--;
+            var h2 = $("<h2>").addClass("text-center text-danger").html(time);
+            $("#playBoard").append(h2);
+
+            if (time === 0) {
+                clearInterval(intervalId);
+                database.ref("/choices/player1pick").set(false);
+                database.ref("/choices/player2pick").set(false);
+
+                playerChoices(yourPlayer);
+
+                var h2 = $("<h2>").addClass("text-center text-danger").html("Time to choose!");
+                $("#playBoard").append(h2);
+
+            };
+
+        }, 1000);
+    };
 
     //function to calculate winner
     function whoWon() {
@@ -170,11 +242,14 @@ $(document).ready(function () {
                 (player1pick === "paper" && player2pick === "rock") ||
                 (player1pick === "scissors" && player2pick === "paper")) {
                 var result = "p1Wins";
+                play1Score++;
                 showWinner(result, player1pick, player2pick);
             }
 
             else {
+
                 var result = "p2Wins";
+                play2Score++;
                 showWinner(result, player1pick, player2pick);
             }
 
@@ -190,32 +265,119 @@ $(document).ready(function () {
 
     };
 
+    //creates join game button on start
+    function playGameBtn(numPlayers) {
+        $("#controlBoard").empty();
+        var h5 = $("<h5>").addClass("card-title").attr("id", "directionsTitle").html("Welcome to my Rock Paper Scissors Game!");
+        var p = $("<p>").addClass("card-text").attr("id", "directionsInfo").html("We still need: " + numPlayers + " more players to join!");
+
+        if (yourPlayer === 0) {
+            var btn = $("<button>").addClass("btn btn-primary").attr("id", "playGame").html("Click to play!");
+            $("#controlBoard").append(h5, p, btn);
+
+        }
+        else if (yourPlayer === 1 || yourPlayer === 2) {
+
+            var btn = $("<button>").addClass("btn btn-warning").attr("id", "leaveGame").html("Leave Game?");
+            $("#controlBoard").append(h5, p, btn);
+        }
+        else {
+            $("#controlBoard").append(h5, p);
+        }
+    };
+
+    //creates a leave game button
+    function leaveGameBtn(yourPlayer) {
+        $("#controlBoard").empty();
+        var h5 = $("<h5>").addClass("card-title").attr("id", "directionsTitle").html("Good Luck!");
+        var p = $("<p>").addClass("card-text").attr("id", "directionsInfo").html("The game will keep going until someone leaves!");
+
+        if (yourPlayer === 1 || yourPlayer === 2) {
+            var btn = $("<button>").addClass("btn btn-warning").attr("id", "leaveGame").html("Leave Game?");
+            $("#controlBoard").append(h5, p, btn);
+
+        }
+        else {
+
+            $("#controlBoard").append(h5, p);
+        };
+    };
+
+    //click function for leave Game Button
+    $(document).on("click", "#leaveGame", function () {
+        console.log(yourPlayer);
+        if (yourPlayer === 1) {
+            database.ref("/players/player1").set(false);
+            $("#controlBoard").empty();
+            $("#player1Board").empty();
+            yourPlayer = 0;
+
+        }
+
+        else if (yourPlayer === 2) {
+            database.ref("/players/player2").set(false);
+            $("#controlBoard").empty();
+            $("#player2Board").empty();
+            yourPlayer = 0;
+        }
+    });
+
     //function to update playboard with winner
     function showWinner(result, player1pick, player2pick) {
         $("#playBoard").empty();
         if (result === "tie") {
             var div = $("<div>").addClass("my-4 text-center");
             var p = $("<p>").html("Tie! You both picked " + player1pick);
-            div.append(p);
+            var h5 = $("<h5>").html("Player 1: <small class='text-success font-weight-bolder'>" + play1Score + "</small> Player 2: <small class='text-success font-weight-bolder'>" + play2Score + "</small>");
+            div.append(p, h5);
             $("#playBoard").append(div);
         }
 
         else if (result === "p1Wins") {
             var div = $("<div>").addClass("my-4 text-center");
             var p = $("<p>").html("Player ones " + player1pick + " beats player two's " + player2pick + "!!!");
-            div.append(p);
+            var h5 = $("<h5>").html("Player 1: <small class='text-success font-weight-bolder'>" + play1Score + "</small> Player 2: <small class='text-success font-weight-bolder'>" + play2Score + "</small>");
+            div.append(p, h5);
             $("#playBoard").append(div);
         }
 
-        else if (result === "p2wins") {
+        else if (result === "p2Wins") {
+
             var div = $("<div>").addClass("my-4 text-center");
             var p = $("<p>").html("Player two's " + player2pick + " beats player one's " + player1pick + "!!!");
-            div.append(p);
+            var h5 = $("<h5>").html("Player 1: <small class='text-success font-weight-bolder'>" + play1Score + "</small> Player 2: <small class='text-success font-weight-bolder'>" + play2Score + "</small>");
+            div.append(p, h5);
             $("#playBoard").append(div);
         };
 
     }
 
-    //function to update scores
+    //chat box
+    var chatBoxRef = database.ref("/chatBox");
+
+    $(document).on("click", "#button-addon2", function () {
+        var yourChat = $("#chatBoxInput").val().trim();
+        var userName = yourName;
+
+        chatBoxRef.push({
+            name: userName,
+            chat: yourChat,
+        });
+
+        $("#chatBoxInput").val("")
+
+    });
+
+    $(document).on("click", "#chatClear", function () {
+        $("#chatBox").empty();
+    });
+
+    chatBoxRef.on("child_added", function (childSnapshot) {
+        var userName = childSnapshot.val().name;
+        var chat = childSnapshot.val().chat;
+        var p = $("<p>").html("<mark>" + userName + ":</mark> " + chat);
+        $("#chatBox").append(p);
+
+    });
 
 });
