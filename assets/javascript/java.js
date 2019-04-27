@@ -311,6 +311,7 @@ $(document).ready(function () {
             $("#controlBoard").empty();
             $("#player1Board").empty();
             yourPlayer = 0;
+            playGameBtn(1);
 
         }
 
@@ -319,6 +320,7 @@ $(document).ready(function () {
             $("#controlBoard").empty();
             $("#player2Board").empty();
             yourPlayer = 0;
+            playGameBtn(1);
         }
     });
 
@@ -356,6 +358,7 @@ $(document).ready(function () {
     var chatBoxRef = database.ref("/chatBox");
 
     $(document).on("click", "#button-addon2", function () {
+        event.preventDefault();
         var yourChat = $("#chatBoxInput").val().trim();
         var userName = yourName;
 
@@ -369,6 +372,7 @@ $(document).ready(function () {
     });
 
     $(document).on("click", "#chatClear", function () {
+        event.preventDefault();
         $("#chatBox").empty();
     });
 
@@ -380,4 +384,11 @@ $(document).ready(function () {
 
     });
 
+    if (yourPlayer === 1) {
+        database.onDisconnect().ref("/players/player1").set(false);
+    }
+
+    if (yourPlayer === 2) {
+        database.onDisconnect().ref("/players/player2").set(false);
+    }
 });
